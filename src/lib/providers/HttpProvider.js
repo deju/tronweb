@@ -2,7 +2,7 @@ import axios from 'axios';
 import utils from 'utils';
 
 export default class HttpProvider {
-    constructor(host, timeout = 30000, user = false, password = false, headers = {}, statusPage = '/') {
+    constructor(host, proxy = {}, timeout = 30000, user = false, password = false, headers = {}, statusPage = '/') {
         if (!utils.isValidURL(host))
             throw new Error('Invalid URL provided to HttpProvider');
 
@@ -12,6 +12,9 @@ export default class HttpProvider {
         if (!utils.isObject(headers))
             throw new Error('Invalid headers object provided');
 
+        if (!utils.isObject(proxy))
+            throw new Error('Invalid proxy object provided');
+
         host = host.replace(/\/+$/, '');
 
         this.host = host;
@@ -20,6 +23,7 @@ export default class HttpProvider {
         this.password = password;
         this.headers = headers;
         this.statusPage = statusPage;
+        this.proxy = proxy;
 
         this.instance = axios.create({
             baseURL: host,
@@ -29,6 +33,7 @@ export default class HttpProvider {
                 user,
                 password
             },
+            proxy: proxy
         });
     }
 
@@ -51,5 +56,23 @@ export default class HttpProvider {
             url,
             method
         }).then(({data}) => data);
+    }
+
+    setProxy(proxy = {}) {
+        if (!utils.isObject(proxy))
+            throw new Error('Invalid proxy object provided');
+        
+        this.proxy = proxy;
+
+        this.instance = axios.create({
+            baseURL: this.host,
+            timeout: this.timeout,
+            headers: this.headers,
+            auth: this.user && {
+                user: this.user,
+                password: this.password
+            },
+            proxy: proxy
+        });
     }
 };

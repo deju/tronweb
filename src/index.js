@@ -25,7 +25,7 @@ export default class TronWeb extends EventEmitter {
 
     constructor(options = false,
                 // for retro-compatibility:
-                solidityNode = false, eventServer = false, privateKey = false) {
+                solidityNode = false, eventServer = false, privateKey = false, proxy = {}) {
         super();
 
         let fullNode;
@@ -34,18 +34,24 @@ export default class TronWeb extends EventEmitter {
             solidityNode = options.solidityNode || options.fullHost;
             eventServer = options.eventServer || options.fullHost;
             privateKey = options.privateKey;
+            proxy = options.proxy || {};
         } else {
             fullNode = options;
         }
 
+        this.proxy = proxy;
+
         if (utils.isString(fullNode))
-            fullNode = new providers.HttpProvider(fullNode);
+            fullNode = new providers.HttpProvider(fullNode, proxy);
 
         if (utils.isString(solidityNode))
-            solidityNode = new providers.HttpProvider(solidityNode);
+            solidityNode = new providers.HttpProvider(solidityNode, proxy);
 
         if (utils.isString(eventServer))
-            eventServer = new providers.HttpProvider(eventServer);
+            eventServer = new providers.HttpProvider(eventServer, proxy);
+        
+        if (!utils.isObject(proxy))
+            throw new Error('Invalid proxy object provided');
 
         this.event = new Event(this);
         this.transactionBuilder = new TransactionBuilder(this);
@@ -130,7 +136,7 @@ export default class TronWeb extends EventEmitter {
 
     setFullNode(fullNode) {
         if (utils.isString(fullNode))
-            fullNode = new providers.HttpProvider(fullNode);
+            fullNode = new providers.HttpProvider(fullNode, this.proxy);
 
         if (!this.isValidProvider(fullNode))
             throw new Error('Invalid full node provided');
@@ -141,7 +147,7 @@ export default class TronWeb extends EventEmitter {
 
     setSolidityNode(solidityNode) {
         if (utils.isString(solidityNode))
-            solidityNode = new providers.HttpProvider(solidityNode);
+            solidityNode = new providers.HttpProvider(solidityNode, this.proxy);
 
         if (!this.isValidProvider(solidityNode))
             throw new Error('Invalid solidity node provided');
@@ -152,6 +158,17 @@ export default class TronWeb extends EventEmitter {
 
     setEventServer(...params) {
         this.event.setServer(...params)
+    }
+
+    setProxy (proxy = {}) {
+        if (!utils.isObject(proxy))
+            throw new Error('Invalid proxy object provided');
+        
+        this.proxy = proxy;
+        this.fullNode.setProxy(proxy);
+        this.solidityNode.setProxy(proxy);
+        this.eventServer.setProxy(proxy);
+        this.setEventServer(this.eventServer);
     }
 
     currentProviders() {

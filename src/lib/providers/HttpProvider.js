@@ -33,7 +33,7 @@ export default class HttpProvider {
                 user,
                 password
             },
-            proxy: proxy
+            proxy: (proxy && proxy.host) ? proxy : undefined,
         });
     }
 
@@ -72,7 +72,7 @@ export default class HttpProvider {
                 user: this.user,
                 password: this.password
             },
-            proxy: proxy
+            proxy: (proxy && proxy.host) ? proxy : undefined
         });
     }
 };
